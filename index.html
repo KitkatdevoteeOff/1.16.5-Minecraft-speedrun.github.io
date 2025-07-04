@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Roulette Minecraft 1.16.1</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #c8a2c8;
+    }
+    #roulette {
+      margin: 2rem 0;
+      font-size: 1.5rem;
+      padding: 1rem;
+      border: 2px dashed #c8a2c8;
+      background-color: #2e2e2e;
+    }
+    button {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      background-color: #c8a2c8;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+      margin: 0.5rem;
+    }
+    #playersList img, #avatarPreview, #winnerDisplay img {
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    #avatarPreview {
+      width: 64px;
+      height: 64px;
+      border: 2px solid #c8a2c8;
+      margin: 1rem auto;
+      display: block;
+    }
+    #winnerDisplay img {
+      width: 64px;
+      height: 64px;
+      border: 3px solid #c8a2c8;
+      margin: 0.5rem auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎰 Roulette Minecraft 1.16.1</h1>
+
+  <div>
+    <img id="avatarPreview" src="https://api.dicebear.com/7.x/thumbs/svg?seed=Steve" alt="avatar preview">
+    <input type="text" id="pseudo" placeholder="Votre pseudo">
+    <input type="file" id="avatarInput" accept="image/*" onchange="previewAvatar(event)">
+    <br><br>
+    <button onclick="createRoom()">Créer</button>
+    <button onclick="startGame()">🚦 Start</button>
+    <button onclick="finishItem()">✅ J'ai fini !</button>
+    <button onclick="restartGame()">🔁 Recommencer</button>
+  </div>
+
+  <div id="playersList"></div>
+  <div id="roulette">En attente...</div>
+  <div>⏱ Temps estimé : <span id="estimatedTime">?</span> secondes</div>
+  <div id="timer">⏱ 00:00</div>
+  <div id="winnerDisplay"></div>
+  <input type="file" id="screenshotInput" style="display:none" accept="image/*" onchange="handleScreenshotUpload(event)">
+  <div id="screenshotPreview"></div>
+
+  <script>
+    let items = [
+      { name: "dead_fire_coral_fan", label: "Dead Fire Coral Fan", rarity: 1, time: 10 },
+      { name: "chicken_spawn_egg", label: "Chicken Spawn Egg", rarity: 1, time: 10 },
+      { name: "splash_potion", label: "Splash Potion of Regeneration (1:30)", rarity: 1, time: 21 },
+      { name: "magenta_shulker_box", label: "Magenta Shulker Box", rarity: 1, time: 11 },
+      { name: "bedrock", label: "Bedrock", rarity: 1, time: 10 },
+      { name: "yellow_concrete", label: "Yellow Concrete", rarity: 1, time: 10 },
+      { name: "pufferfish_spawn_egg", label: "Pufferfish Spawn Egg", rarity: 1, time: 10 },
+      { name: "prismarine_brick_stairs", label: "Prismarine Bricks Stairs", rarity: 1, time: 10 },
+      { name: "dark_prismarine_stairs", label: "Dark Prismarine Stairs", rarity: 1, time: 10 },
+      { name: "end_stone_bricks", label: "End Stone Bricks", rarity: 1, time: 10 },
+      { name: "gold_ingot", label: "Gold Ingot", rarity: 1, time: 13 },
+      { name: "target", label: "Target", rarity: 1, time: 10 },
+      { name: "white_bed", label: "White Bed", rarity: 1, time: 9 },
+      { name: "spruce_boat", label: "Spruce Boat", rarity: 1, time: 12 },
+      { name: "piston", label: "Piston", rarity: 1, time: 14 },
+      { name: "granite", label: "Granite", rarity: 1, time: 8 },
+      { name: "bell", label: "Bell", rarity: 1, time: 15 },
+      { name: "cauldron", label: "Cauldron", rarity: 1, time: 14 },
+      { name: "compass", label: "Compass", rarity: 1, time: 16 },
+      { name: "torch", label: "Torch", rarity: 1, time: 5 },
+      { name: "furnace", label: "Furnace", rarity: 1, time: 10 },
+      { name: "ladder", label: "Ladder", rarity: 1, time: 8 },
+      { name: "crafting_table", label: "Crafting Table", rarity: 1, time: 4 },
+      { name: "bread", label: "Bread", rarity: 1, time: 7 },
+      { name: "redstone", label: "Redstone", rarity: 1, time: 12 },
+      { name: "tripwire_hook", label: "Tripwire Hook", rarity: 1, time: 6 },
+      { name: "bucket", label: "Bucket", rarity: 1, time: 9 },
+      { name: "lever", label: "Lever", rarity: 1, time: 3 },
+      { name: "stick", label: "Stick", rarity: 1, time: 2 },
+      { name: "button", label: "Button", rarity: 1, time: 1 },
+      { name: "door", label: "Door", rarity: 1, time: 4 },
+      { name: "stone", label: "Stone", rarity: 1, time: 3 },
+      { name: "flint", label: "Flint", rarity: 1, time: 6 },
+      { name: "torch", label: "Torch", rarity: 1, time: 5 },
+      { name: "glass", label: "Glass", rarity: 1, time: 9 },
+      { name: "bow", label: "Bow", rarity: 1, time: 14 },
+      { name: "arrow", label: "Arrow", rarity: 1, time: 10 },
+      { name: "string", label: "String", rarity: 1, time: 7 },
+      { name: "gunpowder", label: "Gunpowder", rarity: 1, time: 8 },
+      { name: "iron_ingot", label: "Iron Ingot", rarity: 1, time: 13 },
+      { name: "paper", label: "Paper", rarity: 1, time: 4 },
+      { name: "book", label: "Book", rarity: 1, time: 5 },
+      { name: "wheat", label: "Wheat", rarity: 1, time: 6 },
+      { name: "leather", label: "Leather", rarity: 1, time: 7 },
+      { name: "bone", label: "Bone", rarity: 1, time: 5 },
+      { name: "egg", label: "Egg", rarity: 1, time: 9 },
+      { name: "snowball", label: "Snowball", rarity: 1, time: 3 },
+      { name: "arrow", label: "Arrow", rarity: 1, time: 4 },
+      { name: "sign", label: "Sign", rarity: 1, time: 3 },
+      { name: "dirt", label: "Dirt", rarity: 1, time: 1 }
+    ];
+
+    let shuffledItems = [];
+    let currentItem = null;
+    let interval = null;
+    let time = 0;
+    let currentAvatarData = "https://api.dicebear.com/7.x/thumbs/svg?seed=Steve";
+    let pseudo = "Steve";
+
+    function previewAvatar(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('avatarPreview').src = e.target.result;
+          currentAvatarData = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function createRoom() {
+      pseudo = document.getElementById('pseudo').value || 'Steve';
+      document.getElementById('playersList').innerHTML += `
+        <div><img src="${currentAvatarData}" alt="avatar">${pseudo}</div>`;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function startGame() {
+      shuffledItems = shuffle([...items]);
+      currentItem = shuffledItems.shift();
+      document.getElementById('roulette').textContent = '🎯 Objet à obtenir : ' + currentItem.label;
+      document.getElementById('estimatedTime').textContent = currentItem.time;
+      startTimer();
+    }
+
+    function startTimer() {
+      time = 0;
+      clearInterval(interval);
+      interval = setInterval(() => {
+        time++;
+        let m = String(Math.floor(time / 60)).padStart(2, '0');
+        let s = String(time % 60).padStart(2, '0');
+        document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
+      }, 1000);
+    }
+
+    function finishItem() {
+      document.getElementById('screenshotInput').click();
+    }
+
+    function handleScreenshotUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('screenshotPreview').innerHTML =
+          `<p>🎉 ${pseudo} a terminé !</p><img src="${e.target.result}" alt="Preuve">`;
+        document.getElementById('winnerDisplay').innerHTML = `
+          <p><strong>🏆 Gagnant :</strong></p>
+          <img src="${currentAvatarData}" alt="Avatar gagnant">
+          <p>${pseudo}</p>`;
+        clearInterval(interval);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function restartGame() {
+      document.getElementById('screenshotPreview').innerHTML = '';
+      document.getElementById('winnerDisplay').innerHTML = '';
+      document.getElementById('timer').textContent = '⏱ 00:00';
+      startGame();
+    }
+  </script>
+</body>
+</html>
