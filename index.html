@@ -1,210 +1,1580 @@
+It seems you're having trouble with the item images not loading. This is likely because `minecraftitemids.com` might have changed its image hosting, or there's a cross-origin (CORS) issue preventing your browser from loading images directly from that domain when hosted on a different one (like GitHub Pages).
+
+You also want to revert the roulette to its original "wheel" type, but with the items generated dynamically and the spinning animation.
+
+Let's address these points:
+
+1.  **Remove Item Images:** I will remove the `<img>` tags from the roulette items and the objective display. The item names will remain as text.
+2.  **Revert to Wheel Roulette:** I will bring back the CSS for a radial roulette wheel and adjust the JavaScript to manage the spinning animation and item placement dynamically. This means generating the wedges and placing the text for each item.
+
+This will be a significant rewrite of the roulette part of the CSS and JavaScript.
+
+Here's the updated code:
+
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Roulette Minecraft 1.16.1</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1e1e1e;
-      color: white;
-      text-align: center;
-      padding: 2rem;
-    }
-    h1 {
-      color: #c8a2c8;
-    }
-    #roulette {
-      margin: 2rem 0;
-      font-size: 1.5rem;
-      padding: 1rem;
-      border: 2px dashed #c8a2c8;
-      background-color: #2e2e2e;
-    }
-    button {
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      background-color: #c8a2c8;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      color: black;
-      margin: 0.5rem;
-    }
-    #playersList img, #avatarPreview, #winnerDisplay img {
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    #avatarPreview {
-      width: 64px;
-      height: 64px;
-      border: 2px solid #c8a2c8;
-      margin: 1rem auto;
-      display: block;
-    }
-    #winnerDisplay img {
-      width: 64px;
-      height: 64px;
-      border: 3px solid #c8a2c8;
-      margin: 0.5rem auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Roulette Minecraft 1.16.1</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS Variables */
+        :root {
+            --primary-color: #c8a2c8; /* Lavender */
+            --secondary-color: #6a1b9a; /* Darker Purple for accents */
+            --success-color: #4CAF50; /* Green for success/win */
+            --warning-color: #FFC107; /* Yellow for warnings */
+            --danger-color: #F44336; /* Red for errors */
+
+            --background-dark: #1a1a2e; /* Deep dark blue-purple */
+            --surface-dark: #2a2a4a; /* Slightly lighter dark for cards/sections */
+            --text-dark: #e0e0e0; /* Off-white text on dark background */
+            --border-dark: #404060; /* Dark border */
+            --shadow-dark: rgba(0, 0, 0, 0.6);
+
+            --background-light: #e0e0f2; /* Light blue-purple */
+            --surface-light: #f0f0ff; /* Lighter white for cards/sections */
+            --text-light: #202020; /* Dark text on light background */
+            --border-light: #a0a0c0; /* Light border */
+            --shadow-light: rgba(0, 0, 0, 0.2);
+
+            /* Roulette Wheel Specific Colors */
+            --wheel-border-dark: #800080; /* Purple border */
+            --wheel-center-dark: #400040; /* Darker purple center */
+            --wheel-background-dark: #3a003a; /* Dark purple background */
+            --wheel-item-text-dark: #fff; /* White text */
+
+            --wheel-border-light: #a020f0;
+            --wheel-center-light: #c080ff;
+            --wheel-background-light: #e0c0ff;
+            --wheel-item-text-light: #202020;
+
+
+            --font-main: 'Roboto', sans-serif;
+            --font-pixel: 'Press Start 2P', cursive;
+            --shadow-elevation-1: 0 4px 8px var(--shadow-dark);
+            --shadow-elevation-2: 0 8px 16px var(--shadow-dark);
+        }
+
+        /* Light Theme Overrides */
+        body.light-theme {
+            background-color: var(--background-light);
+            color: var(--text-light);
+        }
+
+        body.light-theme header,
+        body.light-theme .card,
+        body.light-theme #languagePopup,
+        body.light-theme #topControls button,
+        body.light-theme input[type="text"],
+        body.light-theme .file-name-display,
+        body.light-theme #globalMessage,
+        body.light-theme .player-list-container,
+        body.light-theme .timer-display {
+            background-color: var(--surface-light);
+            color: var(--text-light);
+            border-color: var(--border-light);
+            box-shadow: var(--shadow-elevation-1);
+        }
+
+        body.light-theme input[type="file"]::file-selector-button {
+            background-color: var(--primary-color);
+            color: var(--text-dark); /* Ensure dark text on primary for light theme */
+        }
+
+        body.light-theme button {
+            background-color: var(--primary-color);
+            color: var(--text-dark); /* Ensure dark text on primary for light theme */
+        }
+        body.light-theme button.secondary-button {
+             background-color: var(--surface-light);
+             color: var(--text-light);
+             border: 1px solid var(--border-light);
+        }
+        body.light-theme button.secondary-button:hover {
+            filter: brightness(0.95);
+            background-color: var(--background-light);
+        }
+        body.light-theme .current-party-code {
+            background-color: var(--background-light);
+            border-color: var(--border-light);
+            color: var(--primary-color);
+        }
+        body.light-theme #player-info {
+            background-color: var(--surface-light);
+            border-color: var(--border-light);
+        }
+        /* Roulette Light Theme */
+        body.light-theme .roulette-container {
+            border-color: var(--wheel-border-light);
+            background: var(--wheel-background-light);
+        }
+        body.light-theme .roulette-center {
+            background-color: var(--wheel-center-light);
+            border: 2px solid var(--wheel-border-light);
+        }
+        body.light-theme .roulette-item {
+            color: var(--wheel-item-text-light);
+        }
+        body.light-theme .roulette-item:nth-child(even) { background-color: rgba(255, 255, 255, 0.1); } /* Slight background for alternating */
+        body.light-theme .roulette-item:nth-child(odd) { background-color: rgba(0, 0, 0, 0.05); }
+
+        body.light-theme .pointer {
+            border-bottom-color: var(--primary-color); /* Matches primary in light theme */
+        }
+        body.light-theme .player-list ul {
+            border: 1px solid var(--border-light);
+        }
+
+
+        /* Base Styles */
+        body {
+            margin: 0;
+            font-family: var(--font-main);
+            background-color: var(--background-dark);
+            color: var(--text-dark);
+            padding: 20px;
+            text-align: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            padding: 15px 0;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            position: relative; /* For the global message */
+        }
+
+        header img.minecraft-logo {
+            height: 60px; /* Larger logo */
+            vertical-align: middle;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 8px var(--primary-color)); /* More prominent glow */
+        }
+
+        .card {
+            background-color: var(--surface-dark);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: var(--shadow-elevation-1);
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid var(--border-dark);
+            box-sizing: border-box;
+            position: relative; /* For player list positioning */
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.5em;
+            border-bottom: 1px solid var(--border-dark);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        #topControls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 1001;
+        }
+
+        #topControls button {
+            background-color: var(--surface-dark);
+            border: none;
+            padding: 0.75rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            box-shadow: var(--shadow-elevation-1);
+            transition: background-color 0.2s, transform 0.2s, color 0.2s;
+            line-height: 1;
+        }
+
+        #topControls button:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        #languagePopup {
+            display: none;
+            flex-direction: column;
+            position: absolute;
+            top: 4.5rem;
+            right: 1rem;
+            background-color: var(--surface-dark);
+            border-radius: 8px;
+            padding: 0.5rem;
+            z-index: 1000;
+            box-shadow: var(--shadow-elevation-2);
+            border: 1px solid var(--border-dark);
+        }
+
+        #languagePopup button {
+            background-color: var(--primary-color);
+            color: var(--text-dark);
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 5px;
+            margin: 0.2rem 0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #languagePopup button:hover {
+            filter: brightness(0.9);
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="file"] + .file-input-label + .file-name-display {
+            display: block;
+            margin: 10px auto;
+            padding: 12px;
+            width: calc(100% - 24px);
+            max-width: 300px;
+            border-radius: 8px;
+            border: 1px solid var(--border-dark);
+            background-color: var(--background-dark);
+            color: var(--text-dark);
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px auto;
+            max-width: 300px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .file-input-label {
+            background-color: var(--primary-color);
+            color: var(--text-dark);
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-elevation-1);
+        }
+
+        .file-input-label:hover {
+            filter: brightness(0.9);
+        }
+
+        .file-name-display {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            background-color: var(--background-dark);
+            color: var(--text-dark);
+            font-size: 0.9em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: left;
+            min-width: 80px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: var(--shadow-elevation-1);
+        }
+        button.secondary-button {
+            background-color: var(--surface-dark);
+            color: var(--text-dark);
+            border: 1px solid var(--border-dark);
+        }
+        button.secondary-button:hover {
+            filter: brightness(1.1);
+            background-color: var(--surface-dark);
+        }
+
+
+        button:hover {
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-elevation-2);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        button:disabled {
+            background-color: var(--surface-dark);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #roomCodeDisplay {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--primary-color);
+            background-color: var(--background-dark);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px dashed var(--border-dark);
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        #player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: var(--background-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        #avatarPreview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-color);
+            box-shadow: var(--shadow-elevation-1);
+            image-rendering: pixelated;
+        }
+
+        #pseudoDisplay {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: var(--text-dark);
+        }
+
+        /* Game Section */
+        #gameSection {
+            display: none;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* Roulette Wheel Styles */
+        .roulette-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin: 30px auto;
+            border: 8px solid var(--wheel-border-dark);
+            border-radius: 50%;
+            overflow: hidden;
+            background: var(--wheel-background-dark);
+            box-shadow: var(--shadow-elevation-2);
+            transition: transform 0.05s ease-out; /* Smooth rotation */
+        }
+
+        .roulette-wheel {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* Spin animation */
+            transform-origin: center center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .roulette-item {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%; /* Each item takes half the width for the wedge */
+            height: 50%; /* Each item takes half the height for the wedge */
+            transform-origin: 0% 100%; /* Rotate around the bottom-left corner */
+            overflow: hidden;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.75em;
+            color: var(--wheel-item-text-dark);
+            box-sizing: border-box;
+            padding-top: 20px; /* Push text away from center */
+            white-space: nowrap; /* Prevent text wrap */
+        }
+
+        .roulette-item:nth-child(even) { background-color: rgba(0, 0, 0, 0.1); } /* Slight background for alternating */
+        .roulette-item:nth-child(odd) { background-color: rgba(255, 255, 255, 0.05); }
+
+
+        /* This pointer triangle is on top of the wheel */
+        .pointer {
+            position: absolute;
+            top: -20px; /* Position above the wheel */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 25px solid var(--primary-color); /* Color of the pointer */
+            z-index: 10;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        }
+
+        .roulette-center {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: var(--wheel-center-dark);
+            border: 2px solid var(--wheel-border-dark);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            color: var(--text-dark);
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            text-align: center;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .roulette-center span {
+            word-break: break-word;
+        }
+
+        .winning-item-display {
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .current-objective-item {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--surface-dark);
+            border-radius: 8px;
+            border: 1px solid var(--border-dark);
+        }
+        /* No image in objective item anymore */
+        .current-objective-item span {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+
+        .game-controls {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        .game-controls button {
+            margin-top: 0;
+        }
+
+        /* Chronometer */
+        .timer-container {
+            margin-top: 20px;
+            background-color: var(--surface-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 15px 20px;
+            font-family: var(--font-pixel);
+            font-size: 2.2em;
+            color: var(--success-color);
+            box-shadow: var(--shadow-elevation-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .timer-container span {
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .timer-controls button {
+            margin: 5px;
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+
+        /* Coins Display */
+        #coinsDisplay {
+            margin-top: 15px;
+            font-family: var(--font-pixel);
+            font-size: 1.5em;
+            color: var(--warning-color);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #coinsDisplay img {
+            height: 24px;
+            width: 24px;
+            image-rendering: pixelated;
+        }
+
+        /* Player List */
+        .player-list-container {
+            position: absolute;
+            top: 20px;
+            right: 20px; /* Position at top right */
+            width: 200px; /* Fixed width */
+            background-color: var(--surface-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: var(--shadow-elevation-1);
+            text-align: left;
+            z-index: 50; /* Ensure it's above main content but below top controls */
+        }
+        .player-list-container h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2em;
+            border-bottom: 1px solid var(--border-dark);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .player-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px; /* Limit height for scrolling */
+            overflow-y: auto;
+        }
+        .player-list li {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95em;
+            color: var(--text-dark);
+        }
+        .player-list li img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            image-rendering: pixelated;
+            border: 1px solid var(--border-dark);
+        }
+        .player-list li.creator {
+            color: #b088f5; /* Lavender */
+            font-weight: bold;
+        }
+        .player-list li.creator img {
+            border-color: #b088f5;
+        }
+
+        /* Global Win Message */
+        #globalMessage {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 700px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 15px 20px;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 2000;
+            font-weight: bold;
+            font-size: 1.2em;
+            display: none; /* Hidden by default */
+            animation: slideInDown 0.5s ease-out forwards, fadeOut 0.5s ease-in 4.5s forwards;
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 10px 20px;
+            }
+            header img.minecraft-logo {
+                height: 45px;
+            }
+
+            .card {
+                padding: 20px;
+                width: 95%;
+            }
+
+            .roulette-container {
+                width: 280px;
+                height: 280px;
+            }
+            .roulette-center {
+                width: 60px;
+                height: 60px;
+                font-size: 0.8em;
+            }
+            .roulette-item {
+                font-size: 0.6em;
+            }
+
+            .game-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .game-controls button {
+                width: 100%;
+            }
+
+            .timer-container {
+                font-size: 1.8em;
+            }
+
+            .player-list-container {
+                position: static; /* Stack on smaller screens */
+                width: 100%;
+                margin-top: 20px;
+            }
+            #globalMessage {
+                width: 95%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>🎰 Roulette Minecraft 1.16.1</h1>
+    <div id="globalMessage"></div>
 
-  <div>
-    <img id="avatarPreview" src="https://api.dicebear.com/7.x/thumbs/svg?seed=Steve" alt="avatar preview">
-    <input type="text" id="pseudo" placeholder="Votre pseudo">
-    <input type="file" id="avatarInput" accept="image/*" onchange="previewAvatar(event)">
-    <br><br>
-    <button onclick="createRoom()">Créer</button>
-    <button onclick="startGame()">🚦 Start</button>
-    <button onclick="finishItem()">✅ J'ai fini !</button>
-    <button onclick="restartGame()">🔁 Recommencer</button>
-  </div>
+    <div id="topControls">
+        <button id="themeToggle" aria-label="Toggle theme">🌓</button>
+        <button id="widgetButton" aria-label="Open Widget">📺</button>
+        <button id="langButton" aria-label="Select Language">🌍</button>
+    </div>
 
-  <div id="playersList"></div>
-  <div id="roulette">En attente...</div>
-  <div>⏱ Temps estimé : <span id="estimatedTime">?</span> secondes</div>
-  <div id="timer">⏱ 00:00</div>
-  <div id="winnerDisplay"></div>
-  <input type="file" id="screenshotInput" style="display:none" accept="image/*" onchange="handleScreenshotUpload(event)">
-  <div id="screenshotPreview"></div>
+    <div id="languagePopup">
+        <button data-lang="fr">Français</button>
+        <button data-lang="en">English</button>
+        <button data-lang="es">Español</button>
+        <button data-lang="de">Deutsch</button>
+        <button data-lang="it">Italiano</button>
+    </div>
 
-  <script>
-    let items = [
-      { name: "dead_fire_coral_fan", label: "Dead Fire Coral Fan", rarity: 1, time: 10 },
-      { name: "chicken_spawn_egg", label: "Chicken Spawn Egg", rarity: 1, time: 10 },
-      { name: "splash_potion", label: "Splash Potion of Regeneration (1:30)", rarity: 1, time: 21 },
-      { name: "magenta_shulker_box", label: "Magenta Shulker Box", rarity: 1, time: 11 },
-      { name: "bedrock", label: "Bedrock", rarity: 1, time: 10 },
-      { name: "yellow_concrete", label: "Yellow Concrete", rarity: 1, time: 10 },
-      { name: "pufferfish_spawn_egg", label: "Pufferfish Spawn Egg", rarity: 1, time: 10 },
-      { name: "prismarine_brick_stairs", label: "Prismarine Bricks Stairs", rarity: 1, time: 10 },
-      { name: "dark_prismarine_stairs", label: "Dark Prismarine Stairs", rarity: 1, time: 10 },
-      { name: "end_stone_bricks", label: "End Stone Bricks", rarity: 1, time: 10 },
-      { name: "gold_ingot", label: "Gold Ingot", rarity: 1, time: 13 },
-      { name: "target", label: "Target", rarity: 1, time: 10 },
-      { name: "white_bed", label: "White Bed", rarity: 1, time: 9 },
-      { name: "spruce_boat", label: "Spruce Boat", rarity: 1, time: 12 },
-      { name: "piston", label: "Piston", rarity: 1, time: 14 },
-      { name: "granite", label: "Granite", rarity: 1, time: 8 },
-      { name: "bell", label: "Bell", rarity: 1, time: 15 },
-      { name: "cauldron", label: "Cauldron", rarity: 1, time: 14 },
-      { name: "compass", label: "Compass", rarity: 1, time: 16 },
-      { name: "torch", label: "Torch", rarity: 1, time: 5 },
-      { name: "furnace", label: "Furnace", rarity: 1, time: 10 },
-      { name: "ladder", label: "Ladder", rarity: 1, time: 8 },
-      { name: "crafting_table", label: "Crafting Table", rarity: 1, time: 4 },
-      { name: "bread", label: "Bread", rarity: 1, time: 7 },
-      { name: "redstone", label: "Redstone", rarity: 1, time: 12 },
-      { name: "tripwire_hook", label: "Tripwire Hook", rarity: 1, time: 6 },
-      { name: "bucket", label: "Bucket", rarity: 1, time: 9 },
-      { name: "lever", label: "Lever", rarity: 1, time: 3 },
-      { name: "stick", label: "Stick", rarity: 1, time: 2 },
-      { name: "button", label: "Button", rarity: 1, time: 1 },
-      { name: "door", label: "Door", rarity: 1, time: 4 },
-      { name: "stone", label: "Stone", rarity: 1, time: 3 },
-      { name: "flint", label: "Flint", rarity: 1, time: 6 },
-      { name: "torch", label: "Torch", rarity: 1, time: 5 },
-      { name: "glass", label: "Glass", rarity: 1, time: 9 },
-      { name: "bow", label: "Bow", rarity: 1, time: 14 },
-      { name: "arrow", label: "Arrow", rarity: 1, time: 10 },
-      { name: "string", label: "String", rarity: 1, time: 7 },
-      { name: "gunpowder", label: "Gunpowder", rarity: 1, time: 8 },
-      { name: "iron_ingot", label: "Iron Ingot", rarity: 1, time: 13 },
-      { name: "paper", label: "Paper", rarity: 1, time: 4 },
-      { name: "book", label: "Book", rarity: 1, time: 5 },
-      { name: "wheat", label: "Wheat", rarity: 1, time: 6 },
-      { name: "leather", label: "Leather", rarity: 1, time: 7 },
-      { name: "bone", label: "Bone", rarity: 1, time: 5 },
-      { name: "egg", label: "Egg", rarity: 1, time: 9 },
-      { name: "snowball", label: "Snowball", rarity: 1, time: 3 },
-      { name: "arrow", label: "Arrow", rarity: 1, time: 4 },
-      { name: "sign", label: "Sign", rarity: 1, time: 3 },
-      { name: "dirt", label: "Dirt", rarity: 1, time: 1 }
-    ];
+    <header>
+        <img src="https://www.minecraft.net/etc.clientlibs/minecraft/clientlibs/main/resources/img/minecraft-logo.png" alt="Minecraft Logo" class="minecraft-logo">
+    </header>
 
-    let shuffledItems = [];
-    let currentItem = null;
-    let interval = null;
-    let time = 0;
-    let currentAvatarData = "https://api.dicebear.com/7.x/thumbs/svg?seed=Steve";
-    let pseudo = "Steve";
+    <main id="appContent">
+        <div id="pageAccueil" class="card">
+            <h2><span data-i18n="yourIdentity">Votre Identité</span></h2>
+            <div id="player-inputs">
+                <input type="email" id="emailInput" placeholder="Votre email" data-i18n-placeholder="yourEmail">
+                <input type="password" id="passwordInput" placeholder="Mot de passe" data-i18n-placeholder="password">
+                <button id="registerButton" data-i18n="register">S'inscrire</button>
+                <button id="loginButton" class="secondary-button" data-i18n="login">Se connecter</button>
+                <hr style="border-color: var(--border-dark); margin: 20px 0;">
+                <input type="text" id="pseudoInput" placeholder="Votre pseudo" data-i18n-placeholder="yourName">
+                <div class="file-input-group">
+                    <label for="avatarInput" class="file-input-label">
+                        <span><span data-i18n="browse">Parcourir...</span></span>
+                    </label>
+                    <input type="file" id="avatarInput" accept="image/*">
+                    <div id="fileNameDisplay" class="file-name-display"><span data-i18n="noFile">Aucun fichier</span></div>
+                </div>
+            </div>
+            <div id="player-info" style="display: none;">
+                <img id="avatarPreview" src="https://www.mc-heads.net/avatar/MHF_Steve/64" alt="Player Avatar">
+                <span id="pseudoDisplay"></span>
+            </div>
+            <button class="secondary-button" id="discordConnectButton" data-i18n="connectDiscord">🔗 Connecter Discord</button>
 
-    function previewAvatar(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('avatarPreview').src = e.target.result;
-          currentAvatarData = e.target.result;
+            <div class="card" style="margin-top: 20px; border: none; box-shadow: none; padding: 0; background: none;">
+                <h2><span data-i18n="createRoomTitle">Créer une Partie</span></h2>
+                <button id="createRoomButton" data-i18n="createRoom">Créer une partie</button>
+                <div id="roomCodeDisplay" style="display: none;">
+                    <span data-i18n="yourRoomCode">Code de votre partie :</span> <span id="roomCodeValue"></span>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px; border: none; box-shadow: none; padding: 0; background: none;">
+                <h2><span data-i18n="joinRoomTitle">Rejoindre une Partie</span></h2>
+                <input type="text" id="roomCodeInput" placeholder="Code de partie" data-i18n-placeholder="gameCode">
+                <button id="joinRoomButton" data-i18n="joinRoom">Rejoindre</button>
+            </div>
+        </div>
+
+        <div id="gameSection" class="card">
+            <div class="player-list-container">
+                <h3><span data-i18n="playersInRoom">Joueurs dans la salle</span></h3>
+                <div class="player-list">
+                    <ul id="playerList">
+                        </ul>
+                </div>
+            </div>
+
+            <h2><span data-i18n="speedrunObjective">🎯 Objectif Speedrun :</span></h2>
+
+            <div class="current-objective-item">
+                <span id="objectiveItemName"></span>
+            </div>
+
+            <div class="roulette-container">
+                <div class="roulette-wheel" id="rouletteWheel">
+                    </div>
+                <div class="pointer"></div>
+                <div class="roulette-center">
+                    <span data-i18n="rouletteCenterText">Spin!</span>
+                </div>
+            </div>
+
+            <button id="spinButton" class="spin-button" data-i18n="spinButton">Faire Tourner !</button>
+            <div id="result" class="winning-item-display" data-i18n="clickToStart">Cliquez pour commencer</div>
+
+            <div class="timer-container">
+                ⏱️ <span id="timerDisplay">00:00:00</span>
+            </div>
+            <div class="timer-controls">
+                <button id="startTimerButton" class="secondary-button" data-i18n="startTimer">Démarrer</button>
+                <button id="pauseTimerButton" class="secondary-button" data-i18n="pauseTimer" style="display:none;">Pause</button>
+                <button id="resetTimerButton" class="secondary-button" data-i18n="resetTimer">Réinitialiser</button>
+            </div>
+
+            <div id="coinsDisplay">
+                💰 <span id="coinCount">0</span> <img src="https://www.minecraft.net/etc.clientlibs/minecraft/clientlibs/main/resources/img/stick_of_truth_item.png" alt="Coin">
+            </div>
+
+            <div class="game-controls">
+                <button id="skipItemButton" class="secondary-button" data-i18n="skipItem">➡️ Essayer de passer l'item</button>
+                <button id="finishButton" class="secondary-button" data-i18n="finished">✅ J'ai fini !</button>
+                <button id="resetGameButton" class="secondary-button" data-i18n="restart">🔄 Recommencer</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const langButton = document.getElementById('langButton');
+        const languagePopup = document.getElementById('languagePopup');
+
+        // Player & Account Elements
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const registerButton = document.getElementById('registerButton');
+        const loginButton = document.getElementById('loginButton');
+        const pseudoInput = document.getElementById('pseudoInput');
+        const avatarInput = document.getElementById('avatarInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const pseudoDisplay = document.getElementById('pseudoDisplay');
+        const playerInfoDiv = document.getElementById('player-info');
+        const discordConnectButton = document.getElementById('discordConnectButton');
+
+        // Room Elements
+        const createRoomButton = document.getElementById('createRoomButton');
+        const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+        const roomCodeValue = document.getElementById('roomCodeValue');
+        const roomCodeInput = document.getElementById('roomCodeInput');
+        const joinRoomButton = document.getElementById('joinRoomButton');
+        const pageAccueil = document.getElementById('pageAccueil');
+        const gameSection = document.getElementById('gameSection');
+
+        // Game Elements
+        const rouletteWheel = document.getElementById('rouletteWheel'); // Changed: Roulette wheel element
+        const spinButton = document.getElementById('spinButton');
+        const resultDisplay = document.getElementById('result');
+        const objectiveItemName = document.getElementById('objectiveItemName'); // No image for objective item
+
+        // Timer Elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startTimerButton = document.getElementById('startTimerButton');
+        const pauseTimerButton = document.getElementById('pauseTimerButton');
+        const resetTimerButton = document.getElementById('resetTimerButton');
+        let timerInterval = null;
+        let startTime = 0;
+        let elapsedTime = 0;
+        let isRunning = false;
+
+        // Coin Elements
+        const coinsDisplay = document.getElementById('coinsDisplay');
+        const coinCountDisplay = document.getElementById('coinCount');
+        let playerCoins = 0;
+
+        // Game Controls
+        const skipItemButton = document.getElementById('skipItemButton');
+        const finishButton = document.getElementById('finishButton');
+        const resetGameButton = document.getElementById('resetGameButton');
+        const widgetButton = document.getElementById('widgetButton');
+
+        // Player List
+        const playerListUl = document.getElementById('playerList');
+        let playersInRoom = []; // Local simulation of players
+
+        // Global Message
+        const globalMessageDiv = document.getElementById('globalMessage');
+
+        let isSpinning = false;
+        let currentLanguage = 'fr'; // Default language
+
+        // --- Minecraft Items (NO IMAGES) ---
+        const minecraftItems = [
+            { id: "netherite_pickaxe", name: "Pioche en Netherite", difficulty: 500 },
+            { id: "netherite_sword", name: "Epée en Netherite", difficulty: 450 },
+            { id: "trident", name: "Trident", difficulty: 300 },
+            { id: "elytra", name: "Elytra", difficulty: 600 },
+            { id: "enchanted_golden_apple", name: "Pomme Dorée Enchantée", difficulty: 700 },
+            { id: "diamond_block", name: "Bloc de Diamant", difficulty: 400 },
+            { id: "totem_of_undying", name: "Totem d'Undying", difficulty: 650 },
+            { id: "firework_rocket", name: "Feu d'Artifice", difficulty: 100 },
+            { id: "shulker_box", name: "Shulker Box", difficulty: 350 },
+            { id: "potion_of_strength_ii", name: "Potion de Force II", difficulty: 250 },
+            { id: "sponge", name: "Eponge", difficulty: 150 },
+            { id: "conduit", name: "Conduit", difficulty: 550 },
+            { id: "beacon", name: "Beacon", difficulty: 800 },
+            { id: "music_disc_pigstep", name: "Musique Disque (Pigstep)", difficulty: 200 },
+            { id: "dragon_egg", name: "Œuf de Dragon", difficulty: 900 },
+            { id: "nether_star", name: "Etoile du Nether", difficulty: 750 },
+            { id: "lava_bucket", name: "Seau de Lave", difficulty: 50 },
+            { id: "fishing_rod", name: "Canne à Pêche (Luck III)", difficulty: 120 },
+            { id: "saddle", name: "Selle", difficulty: 180 },
+            { id: "redstone_block", name: "Bloc de Redstone", difficulty: 70 },
+            { id: "sticky_piston", name: "Piston Collant", difficulty: 90 },
+            { id: "emerald_block", name: "Bloc d'Émeraude", difficulty: 320 },
+            { id: "iron_ingot", name: "Lingot de Fer", difficulty: 30 },
+            { id: "enchanted_book", name: "Livre Enchanté (Mending)", difficulty: 580 },
+            { id: "bread", name: "Pain", difficulty: 20 },
+            { id: "eye_of_ender", name: "Oeil de Ender", difficulty: 280 }
+        ];
+
+        let currentObjective = null;
+
+        // --- Translations ---
+        const translations = {
+            fr: {
+                title: "Minecraft Roulette 1.16.1 Speedrun",
+                yourIdentity: "Votre Identité",
+                yourEmail: "Votre email",
+                password: "Mot de passe",
+                register: "S'inscrire",
+                login: "Se connecter",
+                browse: "Parcourir...",
+                noFile: "Aucun fichier",
+                yourName: "Votre pseudo",
+                createRoomTitle: "Créer une Partie",
+                createRoom: "Créer une partie",
+                yourRoomCode: "Code de votre partie :",
+                joinRoomTitle: "Rejoindre une Partie",
+                gameCode: "Code de partie",
+                joinRoom: "Rejoindre",
+                speedrunObjective: "🎯 Objectif Speedrun :",
+                spinButton: "Faire Tourner !",
+                clickToStart: "Cliquez pour commencer",
+                youGot: "Vous avez obtenu :",
+                enterPseudo: "Veuillez entrer un pseudo !",
+                enterRoomCode: "Veuillez entrer un code de partie.",
+                partyCreated: "Partie créée localement avec le code : ",
+                joinedParty: "Vous avez 'rejoint' la partie avec le code : ",
+                widgetOpened: "Widget Minecraft fictif ouvert !",
+                customAvatarLoaded: "Avatar personnalisé chargé",
+                connectDiscord: "🔗 Connecter Discord",
+                discordExplainer: "L'intégration Discord (PP auto, pseudo, cosmétiques) et la persistance des comptes nécessitent un serveur backend pour l'authentification (OAuth2) et la gestion des données.",
+                finished: "✅ J'ai fini !",
+                restart: "🔄 Recommencer",
+                congratulations: "Félicitations, objectif atteint ! Vous avez gagné ",
+                coins: " pièces !",
+                startTimer: "Démarrer",
+                pauseTimer: "Pause",
+                resetTimer: "Réinitialiser",
+                skipItem: "➡️ Essayer de passer l'item",
+                skipVoteNeeded: "Le passage d'item nécessite que tous les joueurs de la partie votent pour passer. (Fonctionnalité multijoueur nécessitant un serveur)",
+                playersInRoom: "Joueurs dans la salle",
+                globalWinMessage: "{player} a terminé son speedrun en {time} !",
+                registrationRequired: "Pour utiliser cette fonctionnalité (compte, Discord, cosmétiques persistants), vous devez implémenter un serveur backend pour la gestion des utilisateurs et des bases de données.",
+                rouletteCenterText: "Spin!"
+            },
+            en: {
+                title: "Minecraft Roulette 1.16.1 Speedrun",
+                yourIdentity: "Your Identity",
+                yourEmail: "Your email",
+                password: "Password",
+                register: "Register",
+                login: "Login",
+                browse: "Browse...",
+                noFile: "No file selected",
+                yourName: "Your nickname",
+                createRoomTitle: "Create a Room",
+                createRoom: "Create Room",
+                yourRoomCode: "Your room code:",
+                joinRoomTitle: "Join a Room",
+                gameCode: "Room code",
+                joinRoom: "Join",
+                speedrunObjective: "🎯 Speedrun Objective:",
+                spinButton: "Spin!",
+                clickToStart: "Click to start",
+                youGot: "You got:",
+                enterPseudo: "Please enter a nickname!",
+                enterRoomCode: "Please enter a room code.",
+                partyCreated: "Local party created with code: ",
+                joinedParty: "You have 'joined' the party with code: ",
+                widgetOpened: "Fictional Minecraft widget opened!",
+                customAvatarLoaded: "Custom avatar loaded",
+                connectDiscord: "🔗 Connect Discord",
+                discordExplainer: "Discord integration (auto-PP, nickname, cosmetics) and account persistence require a backend server for authentication (OAuth2) and data management.",
+                finished: "✅ I'm done!",
+                restart: "🔄 Restart",
+                congratulations: "Congratulations, objective achieved! You earned ",
+                coins: " coins!",
+                startTimer: "Start",
+                pauseTimer: "Pause",
+                resetTimer: "Reset",
+                skipItem: "➡️ Try to skip item",
+                skipVoteNeeded: "Item skipping requires all players in the room to vote to skip. (Multiplayer feature requiring a server)",
+                playersInRoom: "Players in room",
+                globalWinMessage: "{player} finished their speedrun in {time}!",
+                registrationRequired: "To use this feature (account, Discord, persistent cosmetics), you need to implement a backend server for user management and databases.",
+                rouletteCenterText: "Spin!"
+            },
+            es: {
+                title: "Ruleta Minecraft 1.16.1 Speedrun",
+                yourIdentity: "Tu Identidad",
+                yourEmail: "Tu email",
+                password: "Contraseña",
+                register: "Registrarse",
+                login: "Iniciar sesión",
+                browse: "Examinar...",
+                noFile: "Ningún archivo",
+                yourName: "Tu apodo",
+                createRoomTitle: "Crear una Sala",
+                createRoom: "Crear Sala",
+                yourRoomCode: "Tu código de sala:",
+                joinRoomTitle: "Unirse a una Sala",
+                gameCode: "Código de sala",
+                joinRoom: "Unirse",
+                speedrunObjective: "🎯 Objetivo Speedrun:",
+                spinButton: "¡Girar!",
+                clickToStart: "Haz clic para empezar",
+                youGot: "Has obtenido:",
+                enterPseudo: "¡Por favor ingresa un apodo!",
+                enterRoomCode: "Por favor ingresa un código de sala.",
+                partyCreated: "Sala local creada con el código: ",
+                joinedParty: "Te has 'unido' a la sala con el código: ",
+                widgetOpened: "¡Widget ficticio de Minecraft abierto!",
+                customAvatarLoaded: "Avatar personalizado cargado",
+                connectDiscord: "🔗 Conectar Discord",
+                discordExplainer: "La integración de Discord (avatar automático, apodo, cosméticos) y la persistencia de la cuenta requieren un servidor backend para la autenticación (OAuth2) y la gestión de datos.",
+                finished: "✅ ¡He terminado!",
+                restart: "🔄 Reiniciar",
+                congratulations: "¡Felicidades, objetivo alcanzado! Ganaste ",
+                coins: " monedas!",
+                startTimer: "Iniciar",
+                pauseTimer: "Pausa",
+                resetTimer: "Reiniciar",
+                skipItem: "➡️ Intentar saltar ítem",
+                skipVoteNeeded: "Saltar un ítem requiere que todos los jugadores en la sala voten para saltar. (Función multijugador que requiere un servidor)",
+                playersInRoom: "Jugadores en la sala",
+                globalWinMessage: "¡{player} terminó su speedrun en {time}!",
+                registrationRequired: "Para usar esta función (cuenta, Discord, cosméticos persistentes), necesitas implementar un servidor backend para la gestión de usuarios y bases de datos.",
+                rouletteCenterText: "¡Girar!"
+            },
+            de: {
+                title: "Minecraft Roulette 1.16.1 Speedrun",
+                yourIdentity: "Deine Identität",
+                yourEmail: "Deine E-Mail",
+                password: "Passwort",
+                register: "Registrieren",
+                login: "Anmelden",
+                browse: "Durchsuchen...",
+                noFile: "Keine Datei ausgewählt",
+                yourName: "Dein Spitzname",
+                createRoomTitle: "Raum erstellen",
+                createRoom: "Raum erstellen",
+                yourRoomCode: "Dein Raumcode:",
+                joinRoomTitle: "Einem Raum beitreten",
+                gameCode: "Raumcode",
+                joinRoom: "Beitreten",
+                speedrunObjective: "🎯 Speedrun-Ziel:",
+                spinButton: "Drehen!",
+                clickToStart: "Klicken zum Starten",
+                youGot: "Du hast bekommen:",
+                enterPseudo: "Bitte gib einen Spitznamen ein!",
+                enterRoomCode: "Bitte gib einen Raumcode ein.",
+                partyCreated: "Lokaler Raum erstellt mit Code: ",
+                joinedParty: "Du hast den Raum mit dem Code 'betreten': ",
+                widgetOpened: "Fiktives Minecraft-Widget geöffnet!",
+                customAvatarLoaded: "Benutzerdefinierter Avatar geladen",
+                connectDiscord: "🔗 Discord verbinden",
+                discordExplainer: "Die Discord-Integration (automatisches Profilbild, Spitzname, Kosmetika) und Kontopersistenz erfordern einen Backend-Server für Authentifizierung (OAuth2) und Datenverwaltung.",
+                finished: "✅ Ich bin fertig!",
+                restart: "🔄 Neu starten",
+                congratulations: "Herzlichen Glückwunsch, Ziel erreicht! Du hast ",
+                coins: " Münzen verdient!",
+                startTimer: "Starten",
+                pauseTimer: "Pause",
+                resetTimer: "Zurücksetzen",
+                skipItem: "➡️ Item überspringen versuchen",
+                skipVoteNeeded: "Das Überspringen von Items erfordert, dass alle Spieler im Raum für das Überspringen stimmen. (Multiplayer-Funktion, die einen Server erfordert)",
+                playersInRoom: "Spieler im Raum",
+                globalWinMessage: "{player} hat seinen Speedrun in {time} beendet!",
+                registrationRequired: "Um diese Funktion (Konto, Discord, dauerhafte Kosmetika) nutzen zu können, musst du einen Backend-Server für die Benutzerverwaltung und Datenbanken.",
+                rouletteCenterText: "Drehen!"
+            },
+            it: {
+                title: "Roulette Minecraft 1.16.1 Speedrun",
+                yourIdentity: "La Tua Identità",
+                yourEmail: "La tua email",
+                password: "Password",
+                register: "Registrati",
+                login: "Accedi",
+                browse: "Sfoglia...",
+                noFile: "Nessun file selezionato",
+                yourName: "Il tuo nickname",
+                createRoomTitle: "Crea una Stanza",
+                createRoom: "Crea Stanza",
+                yourRoomCode: "Il tuo codice stanza:",
+                joinRoomTitle: "Unisciti a una Stanza",
+                gameCode: "Codice stanza",
+                joinRoom: "Unisciti",
+                speedrunObjective: "🎯 Obiettivo Speedrun:",
+                spinButton: "Gira!",
+                clickToStart: "Clicca per iniziare",
+                youGot: "Hai ottenuto:",
+                enterPseudo: "Per favore, inserisci un nickname!",
+                enterRoomCode: "Per favore, inserisci un codice stanza.",
+                partyCreated: "Stanza locale creata con il codice: ",
+                joinedParty: "Hai 'unito' la stanza con il codice: ",
+                widgetOpened: "Widget di Minecraft fittizio aperto!",
+                customAvatarLoaded: "Avatar personalizzato caricato",
+                connectDiscord: "🔗 Connetti Discord",
+                discordExplainer: "L'integrazione di Discord (PP automatico, nickname, cosmetici) e la persistenza dell'account richiedono un server backend per l'autenticazione (OAuth2) e la gestione dei dati.",
+                finished: "✅ Ho finito!",
+                restart: "🔄 Riavvia",
+                congratulations: "Congratulazioni, obiettivo raggiunto! Hai guadagnato ",
+                coins: " monete!",
+                startTimer: "Avvia",
+                pauseTimer: "Pausa",
+                resetTimer: "Ripristina",
+                skipItem: "➡️ Prova a saltare l'elemento",
+                skipVoteNeeded: "Saltare un elemento richiede che tutti i giocatori nella stanza votino per saltare. (Funzionalità multiplayer che richiede un server)",
+                playersInRoom: "Giocatori nella stanza",
+                globalWinMessage: "{player} ha terminato il suo speedrun in {time}!",
+                registrationRequired: "Per utilizzare questa funzione (account, Discord, cosmetici persistenti), è necessario implementare un server backend per la gestione degli utenti e dei database.",
+                rouletteCenterText: "Gira!"
+            }
         };
-        reader.readAsDataURL(file);
-      }
-    }
 
-    function createRoom() {
-      pseudo = document.getElementById('pseudo').value || 'Steve';
-      document.getElementById('playersList').innerHTML += `
-        <div><img src="${currentAvatarData}" alt="avatar">${pseudo}</div>`;
-    }
+        // --- Helper Functions ---
+        function getTranslation(key) {
+            return translations[currentLanguage][key] || translations['fr'][key] || key;
+        }
 
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = getTranslation(key);
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = getTranslation(key);
+            });
+            document.title = getTranslation('title');
+            updateResultDisplay(getTranslation('clickToStart')); // Reset roulette message
+            updatePlayerList(); // Re-render player list on language change
+            document.querySelector('.roulette-center span').textContent = getTranslation('rouletteCenterText');
+        }
 
-    function startGame() {
-      shuffledItems = shuffle([...items]);
-      currentItem = shuffledItems.shift();
-      document.getElementById('roulette').textContent = '🎯 Objet à obtenir : ' + currentItem.label;
-      document.getElementById('estimatedTime').textContent = currentItem.time;
-      startTimer();
-    }
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
 
-    function startTimer() {
-      time = 0;
-      clearInterval(interval);
-      interval = setInterval(() => {
-        time++;
-        let m = String(Math.floor(time / 60)).padStart(2, '0');
-        let s = String(time % 60).padStart(2, '0');
-        document.getElementById('timer').textContent = `⏱ ${m}:${s}`;
-      }, 1000);
-    }
+        function showGlobalMessage(message, duration = 5000) {
+            globalMessageDiv.textContent = message;
+            globalMessageDiv.style.display = 'block';
+            globalMessageDiv.style.animation = 'none'; // Reset animation
+            void globalMessageDiv.offsetWidth; // Trigger reflow
+            globalMessageDiv.style.animation = 'slideInDown 0.5s ease-out forwards, fadeOut 0.5s ease-in ' + (duration / 1000 - 0.5) + 's forwards';
 
-    function finishItem() {
-      document.getElementById('screenshotInput').click();
-    }
+            setTimeout(() => {
+                globalMessageDiv.style.display = 'none';
+            }, duration);
+        }
 
-    function handleScreenshotUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('screenshotPreview').innerHTML =
-          `<p>🎉 ${pseudo} a terminé !</p><img src="${e.target.result}" alt="Preuve">`;
-        document.getElementById('winnerDisplay').innerHTML = `
-          <p><strong>🏆 Gagnant :</strong></p>
-          <img src="${currentAvatarData}" alt="Avatar gagnant">
-          <p>${pseudo}</p>`;
-        clearInterval(interval);
-      };
-      reader.readAsDataURL(file);
-    }
+        function updateResultDisplay(message) {
+            resultDisplay.textContent = message;
+        }
 
-    function restartGame() {
-      document.getElementById('screenshotPreview').innerHTML = '';
-      document.getElementById('winnerDisplay').innerHTML = '';
-      document.getElementById('timer').textContent = '⏱ 00:00';
-      startGame();
-    }
-  </script>
+        // --- Theme Toggle ---
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLightTheme = document.body.classList.contains('light-theme');
+            localStorage.setItem('theme', isLightTheme ? 'light' : 'dark');
+        });
+
+        // --- Language Toggle ---
+        langButton.addEventListener('click', (event) => {
+            languagePopup.style.display = languagePopup.style.display === 'flex' ? 'none' : 'flex';
+            event.stopPropagation();
+        });
+
+        languagePopup.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', () => {
+                currentLanguage = button.dataset.lang;
+                localStorage.setItem('language', currentLanguage);
+                applyTranslations();
+                languagePopup.style.display = 'none';
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!languagePopup.contains(event.target) && event.target !== langButton) {
+                languagePopup.style.display = 'none';
+            }
+        });
+
+        // --- Player & Room Logic ---
+        function updatePlayerDisplay() {
+            const pseudo = pseudoInput.value.trim();
+            if (pseudo) {
+                pseudoDisplay.textContent = pseudo;
+                playerInfoDiv.style.display = 'flex';
+            } else {
+                pseudoDisplay.textContent = '';
+                playerInfoDiv.style.display = 'none';
+            }
+        }
+
+        pseudoInput.addEventListener('input', () => {
+            updatePlayerDisplay();
+            localStorage.setItem('pseudo', pseudoInput.value.trim()); // Save pseudo
+        });
+
+        avatarInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    avatarPreview.src = e.target.result;
+                    localStorage.setItem('avatar', e.target.result); // Save data URL
+                };
+                reader.readAsDataURL(file);
+            } else {
+                fileNameDisplay.textContent = getTranslation('noFile');
+                avatarPreview.src = "https://www.mc-heads.net/avatar/MHF_Steve/64";
+                localStorage.removeItem('avatar');
+            }
+            updatePlayerDisplay();
+        });
+
+        // --- Account Creation (Placeholder) ---
+        registerButton.addEventListener('click', () => {
+            alert(getTranslation('registrationRequired'));
+            console.log("Registering:", emailInput.value, passwordInput.value);
+            // In a real app: Send data to server for user creation and database storage.
+        });
+
+        loginButton.addEventListener('click', () => {
+            alert(getTranslation('registrationRequired'));
+            console.log("Logging in:", emailInput.value, passwordInput.value);
+            // In a real app: Send data to server for authentication and session management.
+            // On success, load user's pseudo, avatar, coins, etc.
+        });
+
+        // --- Discord Integration Placeholder ---
+        discordConnectButton.addEventListener('click', () => {
+            alert(getTranslation('discordExplainer'));
+            // Real Discord integration requires a server-side OAuth2 flow.
+            // After successful auth, server would return Discord user data.
+            // Example of what could happen if Discord data was received:
+            // pseudoInput.value = "DiscordUser#1234";
+            // avatarPreview.src = "URL_FROM_DISCORD_CDN_FOR_AVATAR";
+            // updatePlayerDisplay();
+            // localStorage.setItem('pseudo', pseudoInput.value);
+            // localStorage.setItem('avatar', avatarPreview.src);
+        });
+
+        function generateRandomCode(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        createRoomButton.addEventListener('click', () => {
+            const pseudo = pseudoInput.value.trim();
+            if (!pseudo) {
+                alert(getTranslation('enterPseudo'));
+                return;
+            }
+            const code = generateRandomCode(6);
+            roomCodeValue.textContent = code;
+            roomCodeDisplay.style.display = 'inline-block';
+            roomCodeInput.value = '';
+            alert(getTranslation('partyCreated') + code);
+            showGameSection(code, pseudo, true); // True indicates creator
+        });
+
+        joinRoomButton.addEventListener('click', () => {
+            const pseudo = pseudoInput.value.trim();
+            if (!pseudo) {
+                alert(getTranslation('enterPseudo'));
+                return;
+            }
+            const code = roomCodeInput.value.trim().toUpperCase();
+            if (!code) {
+                alert(getTranslation('enterRoomCode'));
+                return;
+            }
+            roomCodeValue.textContent = code;
+            roomCodeDisplay.style.display = 'inline-block';
+            alert(getTranslation('joinedParty') + code + " (simulation locale)");
+            showGameSection(code, pseudo, false); // False indicates not creator
+        });
+
+        function showGameSection(roomCode, pseudo, isCreator) {
+            pageAccueil.style.display = 'none';
+            gameSection.style.display = 'block';
+
+            // Reset roulette visuals
+            rouletteWheel.style.transition = 'none';
+            rouletteWheel.style.transform = `rotate(0deg)`; // Reset rotation
+            updateResultDisplay(getTranslation('clickToStart'));
+            spinButton.disabled = false;
+            startTimerButton.disabled = false;
+            pauseTimerButton.style.display = 'none';
+            resetTimer(); // Reset chronometer on entering game
+
+            // Initialize player list (simulated)
+            playersInRoom = [{ name: pseudo, avatar: avatarPreview.src, isCreator: isCreator }];
+            updatePlayerList();
+
+            // Set initial objective
+            setRandomObjective();
+        }
+
+        function showHomePage() {
+            gameSection.style.display = 'none';
+            pageAccueil.style.display = 'block';
+            roomCodeDisplay.style.display = 'none';
+            roomCodeValue.textContent = '';
+            resetTimer(); // Reset timer when going back to home
+            playerCoins = 0; // Reset coins
+            updateCoinDisplay();
+        }
+
+        // --- Player List Logic ---
+        function updatePlayerList() {
+            playerListUl.innerHTML = ''; // Clear existing list
+            playersInRoom.forEach(player => {
+                const li = document.createElement('li');
+                li.className = player.isCreator ? 'creator' : '';
+                li.innerHTML = `<img src="${player.avatar}" alt="${player.name} Avatar"> <span>${player.name}</span>`;
+                playerListUl.appendChild(li);
+            });
+        }
+
+        // --- Current Objective Display ---
+        function setRandomObjective() {
+            const randomIndex = Math.floor(Math.random() * minecraftItems.length);
+            currentObjective = minecraftItems[randomIndex];
+            objectiveItemName.textContent = currentObjective.name; // No image for objective
+        }
+
+        // --- Roulette Wheel Logic ---
+        function populateRouletteWheel() {
+            rouletteWheel.innerHTML = '';
+            const numItems = minecraftItems.length;
+            const anglePerItem = 360 / numItems;
+            const wheelRadius = 175; // Half of roulette-container width/height (350px / 2)
+
+            minecraftItems.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.classList.add('roulette-item');
+                
+                // Set background color for alternating segments
+                if (index % 2 === 0) {
+                    itemElement.style.backgroundColor = document.body.classList.contains('light-theme') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                } else {
+                    itemElement.style.backgroundColor = document.body.classList.contains('light-theme') ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+                }
+
+                // Apply rotation to position the segment
+                const rotation = index * anglePerItem;
+                itemElement.style.transform = `rotate(${rotation}deg) skewY(${90 - anglePerItem}deg)`;
+                itemElement.style.transformOrigin = '0% 100%'; /* Rotate from the center of the wheel bottom */
+
+                // Create inner content div for text to un-skew it
+                const textContainer = document.createElement('div');
+                textContainer.textContent = item.name;
+                textContainer.style.transform = `skewY(${90 - anglePerItem}deg) rotate(${anglePerItem / 2}deg)`; /* Un-skew and center text */
+                textContainer.style.position = 'absolute';
+                textContainer.style.top = '25px'; /* Adjust for padding within segment */
+                textContainer.style.left = '50%';
+                textContainer.style.transformOrigin = 'center center';
+                textContainer.style.width = '70%'; /* Limit text width */
+                textContainer.style.whiteSpace = 'normal';
+                textContainer.style.wordBreak = 'break-word';
+                textContainer.style.display = 'flex';
+                textContainer.style.alignItems = 'center';
+                textContainer.style.justifyContent = 'center';
+                textContainer.style.height = 'calc(100% - 25px)'; /* Adjust height to fit */
+                textContainer.style.textAlign = 'center';
+
+
+                itemElement.appendChild(textContainer);
+                rouletteWheel.appendChild(itemElement);
+            });
+        }
+
+        spinButton.addEventListener('click', () => {
+            if (isSpinning) return;
+
+            isSpinning = true;
+            spinButton.disabled = true;
+            updateResultDisplay(getTranslation('clickToStart'));
+
+            const numItems = minecraftItems.length;
+            const anglePerItem = 360 / numItems;
+
+            const winningIndex = Math.floor(Math.random() * numItems);
+            const winningItem = minecraftItems[winningIndex];
+
+            // Calculate the target rotation.
+            // We want the winning item to land under the pointer.
+            // The pointer is at 0 degrees (top).
+            // Items are generated starting from 0 degrees (right).
+            // To align winning item at 0 (top), we need to rotate by:
+            // (index of winning item) * anglePerItem + a random offset within the segment.
+            // A small offset (half anglePerItem) centers it.
+            const baseRotation = (numItems - 1 - winningIndex) * anglePerItem; // Adjust for clockwise spin and pointer at top
+            const randomOffset = Math.random() * (anglePerItem - 5) + (anglePerItem / 2); // Random within segment, avoid edges
+            
+            // Add multiple full rotations for visual effect
+            const fullSpins = 5; // Spin at least 5 full circles
+            const totalRotation = (fullSpins * 360) + baseRotation + randomOffset;
+
+            rouletteWheel.style.transition = 'none'; // Remove transition for instant reset
+            rouletteWheel.style.transform = `rotate(0deg)`;
+            void rouletteWheel.offsetWidth; // Trigger reflow
+
+            rouletteWheel.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1.0)';
+            rouletteWheel.style.transform = `rotate(${totalRotation}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                spinButton.disabled = false;
+                updateResultDisplay(`${getTranslation('youGot')} ${winningItem.name} !`);
+                currentObjective = winningItem; // Set the new objective
+                objectiveItemName.textContent = currentObjective.name;
+            }, 4000); // Match this with CSS transition duration
+        });
+
+        // --- Chronometer Logic ---
+        function updateTimerDisplay() {
+            const now = Date.now();
+            elapsedTime = now - startTime;
+            timerDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        startTimerButton.addEventListener('click', () => {
+            if (!isRunning) {
+                startTime = Date.now() - elapsedTime; // Resume from where it left off or start new
+                timerInterval = setInterval(updateTimerDisplay, 1000);
+                isRunning = true;
+                startTimerButton.style.display = 'none';
+                pauseTimerButton.style.display = 'inline-block';
+            }
+        });
+
+        pauseTimerButton.addEventListener('click', () => {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startTimerButton.style.display = 'inline-block';
+                pauseTimerButton.style.display = 'none';
+            }
+        });
+
+        resetTimerButton.addEventListener('click', resetTimer);
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startTime = 0;
+            elapsedTime = 0;
+            timerDisplay.textContent = '00:00:00';
+            startTimerButton.style.display = 'inline-block';
+            pauseTimerButton.style.display = 'none';
+        }
+
+        // --- Coin System ---
+        function updateCoinDisplay() {
+            coinCountDisplay.textContent = playerCoins;
+        }
+
+        function calculateCoins(timeMs, difficulty) {
+            // Example simple calculation:
+            // Faster time = more coins. Higher difficulty = more base coins.
+            const maxTimeMs = 10 * 60 * 1000; // 10 minutes max for high rewards
+            const timeFactor = Math.max(0, 1 - (timeMs / maxTimeMs)); // 1 for 0s, 0 for 10mins+
+            const baseCoins = 50 + (difficulty / 10); // Base coins plus a bonus for difficulty
+            const earnedCoins = Math.round(baseCoins * (1 + timeFactor));
+            return earnedCoins;
+        }
+
+        // --- Game Control Buttons ---
+        finishButton.addEventListener('click', () => {
+            if (currentObjective) {
+                pauseTimer(); // Stop the timer when objective is finished
+                const coinsEarned = calculateCoins(elapsedTime, currentObjective.difficulty);
+                playerCoins += coinsEarned;
+                updateCoinDisplay();
+
+                const winMessage = getTranslation('congratulations') + coinsEarned + getTranslation('coins');
+                updateResultDisplay(winMessage);
+                showGlobalMessage(getTranslation('globalWinMessage')
+                    .replace('{player}', pseudoInput.value || 'Player')
+                    .replace('{time}', formatTime(elapsedTime)), 5000);
+
+                // Simulate going back to home after a short delay or user action
+                setTimeout(showHomePage, 3000); // Wait a bit after showing win message
+            }
+        });
+
+        // Skip Item (Requires Backend)
+        skipItemButton.addEventListener('click', () => {
+            alert(getTranslation('skipVoteNeeded'));
+            // In a real multiplayer setup, this would send a 'skip_vote' to the server.
+            // The server would track votes and, if all players vote yes, trigger a new spin/objective.
+        });
+
+        resetGameButton.addEventListener('click', () => {
+            if (confirm(getTranslation('restartConfirm'))) {
+                showHomePage(); // Reset to home page
+            }
+        });
+
+        // --- Widget Button Placeholder ---
+        widgetButton.addEventListener('click', () => {
+            alert(getTranslation('widgetOpened'));
+        });
+
+        // Initial setup on load
+        window.onload = function() {
+            // Apply saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+
+            // Apply saved language
+            const savedLanguage = localStorage.getItem('language');
+            if (savedLanguage && translations[savedLanguage]) {
+                currentLanguage = savedLanguage;
+            } else {
+                currentLanguage = 'fr'; // Default to French
+            }
+            applyTranslations();
+
+            // Load saved pseudo and avatar (client-side only persistence)
+            pseudoInput.value = localStorage.getItem('pseudo') || '';
+            const savedAvatar = localStorage.getItem('avatar');
+            if (savedAvatar) {
+                avatarPreview.src = savedAvatar;
+                fileNameDisplay.textContent = getTranslation('customAvatarLoaded');
+            } else {
+                avatarPreview.src = "https://www.mc-heads.net/avatar/MHF_Steve/64";
+                fileNameDisplay.textContent = getTranslation('noFile');
+            }
+            updatePlayerDisplay();
+
+            // Initialize roulette wheel
+            populateRouletteWheel();
+            updateCoinDisplay(); // Initialize coin display
+        };
+
+        // Pause timer helper for finish button
+        function pauseTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startTimerButton.style.display = 'inline-block';
+                pauseTimerButton.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
